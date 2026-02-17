@@ -20,10 +20,6 @@ Mapped Techniques: T1110, T1021.001
 
 
 
----
-
-
-
 \## Executive Summary
 
 
@@ -100,7 +96,7 @@ This demonstrates both prevention and visibility across security layers.
 
 \- \*\*pfSense Firewall\*\* (WAN / LAN / OPT1-ATTACKNET)
 
-\- \*\*Splunk Enterprise on Ubuntu\*\*
+\- \*\*Splunk Enterprise on Ubuntu\*\* (indexing, search, dashboards)
 
 \- \*\*Windows Endpoint\*\* with Splunk Universal Forwarder
 
@@ -178,95 +174,43 @@ flowchart LR
 
 
 
-\### 1. Temporary Policy Adjustment
+The experiment followed a structured validation sequence:
 
 
 
-Enabled ATTACKNET → LAN RDP (TCP/3389) for controlled testing.
+1\. \*\*Temporary Policy Adjustment\*\*
+
+&nbsp;  - Enabled ATTACKNET → LAN RDP (TCP/3389) for controlled testing.
+
+&nbsp;  - Confirmed pfSense logged PASS entries for the attack traffic.
 
 
 
-\#### pfSense Temporary Allow Rule
+2\. \*\*Attack Simulation\*\*
 
-!\[pfSense Temporary Allow Rule](screenshots/pfsense/pfsense-opt1-temp-allow-3389.png)
+&nbsp;  - Generated failed RDP logon attempts from Kali.
 
+&nbsp;  - Confirmed Windows logged Event ID 4625.
 
-
-\#### pfSense PASS Filterlog Entries
-
-!\[pfSense PASS Filterlog](screenshots/pfsense/pfsense-filterlog-pass-3389.png)
+&nbsp;  - Verified ingestion of 4625 events into Splunk.
 
 
 
----
+3\. \*\*Cross-Layer Correlation\*\*
+
+&nbsp;  - Observed alignment between firewall PASS events and Windows 4625 failures.
+
+&nbsp;  - Confirmed temporal relationship between network access and authentication attempts.
 
 
 
-\### 2. Attack Simulation
+4\. \*\*Segmentation Restoration\*\*
 
+&nbsp;  - Identified and removed unintended blanket allow rule on OPT1.
 
+&nbsp;  - Observed pfSense logging BLOCK events for TCP/3389.
 
-Generated failed RDP logon attempts from Kali.
-
-
-
-\#### Windows Event Viewer — Event ID 4625
-
-!\[Windows 4625 Event](screenshots/windows/windows-security-4625-eventviewer.png)
-
-
-
-\#### Splunk — 4625 Ingestion Confirmed
-
-!\[Splunk 4625 Ingestion](screenshots/splunk/splunk-4625-ingestion-confirmed.png)
-
-
-
----
-
-
-
-\### 3. Cross-Layer Correlation
-
-
-
-Confirmed alignment between firewall PASS events and Windows 4625 failures in Splunk.
-
-
-
-\#### Splunk — pfSense PASS (Parsed)
-
-!\[Splunk pfSense PASS](screenshots/splunk/splunk-pfsense-pass-3389.png)
-
-
-
----
-
-
-
-\### 4. Segmentation Restoration
-
-
-
-Identified and removed unintended blanket allow rule on OPT1.
-
-
-
-\#### pfSense BLOCK Filterlog Entries
-
-!\[pfSense BLOCK Filterlog](screenshots/pfsense/pfsense-filterlog-block-3389.png)
-
-
-
-\#### Splunk — pfSense BLOCK (Parsed)
-
-!\[Splunk pfSense BLOCK](screenshots/splunk/splunk-pfsense-block-3389.png)
-
-
-
-\#### Splunk — Post-Enforcement No New 4625
-
-!\[Splunk No New 4625](screenshots/splunk/splunk-post-enforcement-no-4625.png)
+&nbsp;  - Verified no new 4625 failures occurred from the attacker source post-enforcement.
 
 
 
@@ -282,7 +226,7 @@ pfSense firewall logs were ingested as generic syslog (`sourcetype=syslog`) with
 
 
 
-This demonstrates the ability to normalize raw log data for detection engineering without relying on prebuilt technology add-ons — reflecting real-world SOC workflows where log formats must often be interpreted and structured manually.
+This approach demonstrates the ability to normalize raw log data for detection engineering without relying on prebuilt technology add-ons, reflecting real-world SOC workflows where log formats must often be interpreted and structured manually.
 
 
 
@@ -296,7 +240,7 @@ This demonstrates the ability to normalize raw log data for detection engineerin
 
 \- \*\*T1110 — Brute Force\*\*  
 
-&nbsp; Repeated authentication attempts against a remote service (RDP).
+&nbsp; Represents repeated authentication attempts against a remote service (RDP).
 
 
 
@@ -307,8 +251,6 @@ This demonstrates the ability to normalize raw log data for detection engineerin
 
 
 Within this experiment:
-
-
 
 \- \*\*T1021.001\*\* = Access vector  
 
@@ -344,11 +286,7 @@ Within this experiment:
 
 
 
-Phase 2 — Experiment 1 demonstrates that network segmentation can be validated, monitored, and proven using correlated telemetry across firewall and endpoint layers.
-
-
-
-By introducing controlled attack traffic, capturing multi-layer logs, correlating evidence in Splunk, and restoring enforcement, this experiment establishes a repeatable detection engineering workflow:
+Phase 2 — Experiment 1 demonstrates that network segmentation can be validated, monitored, and proven using correlated telemetry across firewall and endpoint layers. By introducing controlled attack traffic, capturing multi-layer logs, correlating evidence in Splunk, and restoring enforcement, this experiment establishes a repeatable detection engineering workflow:
 
 
 
