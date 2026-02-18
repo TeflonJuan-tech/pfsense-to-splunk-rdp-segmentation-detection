@@ -54,7 +54,6 @@ This demonstrates both prevention and visibility across security layers.
 - **Kali Linux Attacker VM**
 
 ---
-
 ## Diagram (Mermaid)
 
 ```mermaid
