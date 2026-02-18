@@ -9,8 +9,6 @@ Mapped Techniques: T1110, T1021.001
 
 **Phase 2 — Experiment 1 | Network Segmentation Validation + RDP Attack Telemetry Correlation (pfSense + Windows + Splunk)**
 
----
-
 ## Executive Summary
 
 This experiment validates network segmentation enforcement and detection engineering correlation within a Blue Team home lab environment. A Kali attacker system (ATTACKNET) generated failed RDP authentication attempts against a Windows endpoint (LAN). Telemetry was captured at two layers:
@@ -49,11 +47,12 @@ This demonstrates both prevention and visibility across security layers.
 ### Stack
 
 - **pfSense Firewall** (WAN / LAN / OPT1-ATTACKNET)
-- **Splunk Enterprise on Ubuntu**
+- **Splunk Enterprise on Ubuntu** (indexing, search, dashboards)
 - **Windows Endpoint** with Splunk Universal Forwarder
 - **Kali Linux Attacker VM**
 
 ---
+
 ## Diagram (Mermaid)
 
 ```mermaid
@@ -81,56 +80,31 @@ flowchart LR
 
   OPT1 -- "pfSense filterlog" --> S
   W -- "UF: WinEventLog Security (4625)" --> S
+```
 
 ---
 
 ## Technical Validation
 
-### 1. Temporary Policy Adjustment
+The experiment followed a structured validation sequence:
 
-Enabled ATTACKNET → LAN RDP (TCP/3389) for controlled testing.
+1. **Temporary Policy Adjustment**
+   - Enabled ATTACKNET → LAN RDP (TCP/3389) for controlled testing.
+   - Confirmed pfSense logged PASS entries for the attack traffic.
 
-#### pfSense Temporary Allow Rule
-![pfSense Temporary Allow Rule](screenshots/pfSense/pfsense-opt1-temp-allow-3389.png)
+2. **Attack Simulation**
+   - Generated failed RDP logon attempts from Kali.
+   - Confirmed Windows logged Event ID 4625.
+   - Verified ingestion of 4625 events into Splunk.
 
-#### pfSense PASS Filterlog Entries
-![pfSense PASS Filterlog](screenshots/pfSense/pfsense-filterlog-pass-3389.png)
+3. **Cross-Layer Correlation**
+   - Observed alignment between firewall PASS events and Windows 4625 failures.
+   - Confirmed temporal relationship between network access and authentication attempts.
 
----
-
-### 2. Attack Simulation
-
-Generated failed RDP logon attempts from Kali.
-
-#### Windows Event Viewer — Event ID 4625
-![Windows 4625 Event](screenshots/Windows/windows-security-4625-eventviewer.png)
-
-#### Splunk — 4625 Ingestion Confirmed
-![Splunk 4625 Ingestion](screenshots/Splunk/splunk-4625-ingestion-confirmed.png)
-
----
-
-### 3. Cross-Layer Correlation
-
-Confirmed alignment between firewall PASS events and Windows 4625 failures in Splunk.
-
-#### Splunk — pfSense PASS (Parsed)
-![Splunk pfSense PASS](screenshots/Splunk/splunk-pfsense-pass-3389.png)
-
----
-
-### 4. Segmentation Restoration
-
-Identified and removed unintended blanket allow rule on OPT1.
-
-#### pfSense BLOCK Filterlog Entries
-![pfSense BLOCK Filterlog](screenshots/pfSense/pfsense-filterlog-block-3389.png)
-
-#### Splunk — pfSense BLOCK (Parsed)
-![Splunk pfSense BLOCK](screenshots/Splunk/splunk-pfsense-block-3389.png)
-
-#### Splunk — Post-Enforcement No New 4625
-![Splunk No New 4625](screenshots/Splunk/splunk-post-enforcement-no-4625.png)
+4. **Segmentation Restoration**
+   - Identified and removed unintended blanket allow rule on OPT1.
+   - Observed pfSense logging BLOCK events for TCP/3389.
+   - Verified no new 4625 failures occurred from the attacker source post-enforcement.
 
 ---
 
@@ -138,17 +112,19 @@ Identified and removed unintended blanket allow rule on OPT1.
 
 pfSense firewall logs were ingested as generic syslog (`sourcetype=syslog`) without automatic field extraction. To enable structured analysis within Splunk, inline parsing was performed using SPL (`rex`, `split`, and `mvindex`) to extract key fields such as `action`, `src_ip`, `dest_ip`, and `dest_port` from the filterlog CSV format.
 
-This demonstrates the ability to normalize raw log data for detection engineering without relying on prebuilt technology add-ons — reflecting real-world SOC workflows where log formats must often be interpreted and structured manually.
+This approach demonstrates the ability to normalize raw log data for detection engineering without relying on prebuilt technology add-ons, reflecting real-world SOC workflows where log formats must often be interpreted and structured manually.
 
 ---
 
 ## MITRE ATT&CK Mapping
 
-- **T1110 — Brute Force**
-- **T1021.001 — Remote Services: Remote Desktop Protocol**
+- **T1110 — Brute Force**  
+  Represents repeated authentication attempts against a remote service (RDP).
+
+- **T1021.001 — Remote Services: Remote Desktop Protocol**  
+  Represents the targeted access vector (RDP over TCP/3389).
 
 Within this experiment:
-
 - **T1021.001** = Access vector  
 - **T1110** = Authentication abuse method  
 
@@ -166,9 +142,7 @@ Within this experiment:
 
 ## Professional Closeout
 
-Phase 2 — Experiment 1 demonstrates that network segmentation can be validated, monitored, and proven using correlated telemetry across firewall and endpoint layers.
-
-By introducing controlled attack traffic, capturing multi-layer logs, correlating evidence in Splunk, and restoring enforcement, this experiment establishes a repeatable detection engineering workflow:
+Phase 2 — Experiment 1 demonstrates that network segmentation can be validated, monitored, and proven using correlated telemetry across firewall and endpoint layers. By introducing controlled attack traffic, capturing multi-layer logs, correlating evidence in Splunk, and restoring enforcement, this experiment establishes a repeatable detection engineering workflow:
 
 **Introduce → Observe → Correlate → Enforce → Verify**
 
