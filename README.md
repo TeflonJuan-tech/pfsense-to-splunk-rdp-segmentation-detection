@@ -92,19 +92,31 @@ The experiment followed a structured validation sequence:
    - Enabled ATTACKNET → LAN RDP (TCP/3389) for controlled testing.
    - Confirmed pfSense logged PASS entries for the attack traffic.
 
+   ![pfSense Temporary Allow Rule](screenshots/pfSense/pfsense-opt1-temp-allow-3389.png)
+   ![pfSense PASS Filterlog](screenshots/pfSense/pfsense-filterlog-pass-3389.png)
+
 2. **Attack Simulation**
    - Generated failed RDP logon attempts from Kali.
    - Confirmed Windows logged Event ID 4625.
    - Verified ingestion of 4625 events into Splunk.
 
+   ![Windows 4625 Event](screenshots/Windows/windows-security-4625-eventviewer.png)
+   ![Splunk 4625 Ingestion](screenshots/Splunk/splunk-4625-ingestion-confirmed.png)
+
 3. **Cross-Layer Correlation**
    - Observed alignment between firewall PASS events and Windows 4625 failures.
    - Confirmed temporal relationship between network access and authentication attempts.
+
+   ![Splunk pfSense PASS](screenshots/Splunk/splunk-pfsense-pass-3389.png)
 
 4. **Segmentation Restoration**
    - Identified and removed unintended blanket allow rule on OPT1.
    - Observed pfSense logging BLOCK events for TCP/3389.
    - Verified no new 4625 failures occurred from the attacker source post-enforcement.
+
+   ![pfSense BLOCK Filterlog](screenshots/pfSense/pfsense-filterlog-block-3389.png)
+   ![Splunk pfSense BLOCK](screenshots/Splunk/splunk-pfsense-block-3389.png)
+   ![Splunk No New 4625](screenshots/Splunk/splunk-post-enforcement-no-4625.png)
 
 ---
 
